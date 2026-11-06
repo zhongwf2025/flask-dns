@@ -1,3 +1,6 @@
+<img width="1920" height="1020" alt="图片" src="https://github.com/user-attachments/assets/8110bc91-a3fa-47b3-8f21-c2fc8788a2b3" />
+
+
 ========================================
 DNS管理系统 远程部署指南
 服务器: 10.10.0.232
