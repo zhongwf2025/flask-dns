@@ -1,0 +1,64 @@
+# DNS管理系统 Docker Compose 配置
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: dns-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Dw.2016%
+      MYSQL_DATABASE: dns
+      MYSQL_CHARSET: utf8
+      TZ: Asia/Shanghai
+    ports:
+      - "53306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    command:
+      - --character-set-server=utf8
+      - --collation-server=utf8_general_ci
+      - --default-authentication-plugin=mysql_native_password
+    networks:
+      - dns-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pDw.2016%"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # DNS管理系统应用
+  dns-app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: dns-app
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8088:8088"
+      - "53:53/udp"
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=Dw.2016%
+      - DB_NAME=dns
+    volumes:
+      - ./config.py:/app/config.py
+    networks:
+      - dns-network
+
+# 数据卷
+volumes:
+  mysql_data:
+    driver: local
+
+# 网络
+networks:
+  dns-network:
+    driver: bridge
