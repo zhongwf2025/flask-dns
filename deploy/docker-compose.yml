@@ -1,0 +1,28 @@
+# DNS管理系统 Docker Compose 配置
+version: '3.8'
+
+services:
+  # DNS管理系统应用
+  dns-app:
+    image: dns-manager:latest
+    container_name: dns-app
+    restart: always
+    ports:
+      - "8088:8088"
+      - "53:53/udp"
+    environment:
+      - DB_HOST=10.10.11.205
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root123456
+      - DB_NAME=dns
+    volumes:
+      - ./config.py:/app/config.py
+    networks:
+      - dns-network
+
+
+# 网络
+networks:
+  dns-network:
+    driver: bridge
