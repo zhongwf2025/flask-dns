@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}条件转发 - DNS管理系统{% endblock %}
+{% block page_title %}条件转发{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h6>条件转发列表</h6>
+        <div>
+            <label class="switch" style="margin-right:10px;vertical-align:middle;">
+                <input type="checkbox" id="enableCfw" {{ 'checked' if cfw_enabled else '' }} onchange="toggleCfw()">
+                <span class="slider"></span>
+            </label>
+            <span style="font-size:14px;color:var(--text-secondary);vertical-align:middle;">{{ '已开启' if cfw_enabled else '已关闭' }}</span>
+            <a href="javascript:void(0)" class="btn btn-primary btn-sm" onclick="showAddCfw()" style="margin-left:15px;">
+                <i class="fas fa-plus"></i> 添加规则
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>域名</th>
+                        <th>转发到DNS</th>
+                        <th>备注</th>
+                        <th>添加时间</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in cfws %}
+                    <tr>
+                        <td>{{ c.id }}</td>
+                        <td>{{ c.domain }}</td>
+                        <td>{{ c.ip }}</td>
+                        <td>{{ c.note }}</td>
+                        <td>{{ c.rtime }}</td>
+                        <td>
+                            {% if c.state == 0 %}
+                            <span class="badge badge-success">正常</span>
+                            {% else %}
+                            <span class="badge badge-danger">暂停</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn btn-warning btn-sm" onclick="editCfw({{ c.id }}, '{{ c.domain }}', '{{ c.ip }}', '{{ c.note }}')"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteCfw({{ c.id }})"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not cfws %}
+                    <tr><td colspan="7" class="empty-state"><p>暂无条件转发规则</p></td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 模态框 -->
+<div class="modal-overlay" id="cfwModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h5 id="cfwModalTitle">添加条件转发</h5>
+            <button class="close-btn" onclick="closeCfwModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="cfwEditId">
+            <div class="form-group">
+                <label>域名</label>
+                <input type="text" class="form-control" id="cfwDomain" placeholder="例如: example.com">
+            </div>
+            <div class="form-group">
+                <label>转发到DNS服务器</label>
+                <input type="text" class="form-control" id="cfwIp" placeholder="例如: 8.8.8.8">
+            </div>
+            <div class="form-group">
+                <label>备注</label>
+                <input type="text" class="form-control" id="cfwNote" placeholder="可选">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeCfwModal()">取消</button>
+            <button class="btn btn-primary" onclick="saveCfw()">保存</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showAddCfw() {
+    document.getElementById('cfwModalTitle').textContent = '添加条件转发';
+    document.getElementById('cfwEditId').value = '';
+    document.getElementById('cfwDomain').value = '';
+    document.getElementById('cfwIp').value = '';
+    document.getElementById('cfwNote').value = '';
+    document.getElementById('cfwModal').classList.add('show');
+}
+
+function editCfw(id, domain, ip, note) {
+    document.getElementById('cfwModalTitle').textContent = '编辑条件转发';
+    document.getElementById('cfwEditId').value = id;
+    document.getElementById('cfwDomain').value = domain;
+    document.getElementById('cfwIp').value = ip;
+    document.getElementById('cfwNote').value = note;
+    document.getElementById('cfwModal').classList.add('show');
+}
+
+function closeCfwModal() { document.getElementById('cfwModal').classList.remove('show'); }
+
+function saveCfw() {
+    const id = document.getElementById('cfwEditId').value;
+    const data = {
+        id: parseInt(id) || 0,
+        domain: document.getElementById('cfwDomain').value.trim(),
+        ip: document.getElementById('cfwIp').value.trim(),
+        note: document.getElementById('cfwNote').value.trim()
+    };
+    if (!data.domain || !data.ip) { alert('域名和DNS服务器不能为空'); return; }
+
+    fetch(id ? '/api/cfw/edit' : '/api/cfw/add', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(res => { if (res.code === 0) location.reload(); else alert(res.msg || '操作失败'); });
+}
+
+function deleteCfw(id) {
+    if (!confirm('确定删除?')) return;
+    fetch('/api/cfw/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id: id})
+    })
+    .then(r => r.json())
+    .then(res => { if (res.code === 0) location.reload(); else alert(res.msg || '删除失败'); });
+}
+
+function toggleCfw() {
+    const enabled = document.getElementById('enableCfw').checked;
+    fetch('/api/cfw/toggle', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({enabled: enabled})
+    })
+    .then(r => r.json())
+    .then(res => { if (res.code === 0) location.reload(); else alert(res.msg); });
+}
+</script>
+{% endblock %}

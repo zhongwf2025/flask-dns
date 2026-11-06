@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}首页 - DNS管理系统{% endblock %}
+{% block page_title %}首页{% endblock %}
+
+{% block content %}
+<!-- 基本信息 -->
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-icon cpu"><i class="fas fa-clock"></i></div>
+        <div class="stat-label">上次登录时间</div>
+        <div class="stat-value" style="font-size:16px;">{{ last_login }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon memory"><i class="fas fa-map-marker-alt"></i></div>
+        <div class="stat-label">上次登录IP</div>
+        <div class="stat-value" style="font-size:16px;">{{ last_ip }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon disk"><i class="fas fa-code-branch"></i></div>
+        <div class="stat-label">软件版本</div>
+        <div class="stat-value" style="font-size:16px;">v2.0.1</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon query"><i class="fas fa-search"></i></div>
+        <div class="stat-label">今日查询</div>
+        <div class="stat-value">{{ today_queries }}</div>
+    </div>
+</div>
+
+<!-- 资源使用率 -->
+<div class="gauge-container">
+    <div class="gauge-item">
+        <div class="gauge-circle" style="background: conic-gradient(var(--info-color) {{ cpu_usage }}%, #e0e0e0 {{ cpu_usage }}%);">
+            <div>
+                <div class="gauge-value" style="color:var(--info-color);">{{ cpu_usage }}%</div>
+            </div>
+        </div>
+        <div class="gauge-label">CPU使用率</div>
+    </div>
+    <div class="gauge-item">
+        <div class="gauge-circle" style="background: conic-gradient(var(--primary-color) {{ mem_usage }}%, #e0e0e0 {{ mem_usage }}%);">
+            <div>
+                <div class="gauge-value" style="color:var(--primary-color);">{{ mem_usage }}%</div>
+            </div>
+        </div>
+        <div class="gauge-label">内存使用率</div>
+    </div>
+    <div class="gauge-item">
+        <div class="gauge-circle" style="background: conic-gradient(var(--warning-color) {{ disk_usage }}%, #e0e0e0 {{ disk_usage }}%);">
+            <div>
+                <div class="gauge-value" style="color:var(--warning-color);">{{ disk_usage }}%</div>
+            </div>
+        </div>
+        <div class="gauge-label">磁盘使用率</div>
+    </div>
+</div>
+
+<!-- 24小时查询统计图 -->
+<div class="card">
+    <div class="card-header">
+        <h6><i class="fas fa-chart-area"></i> 24小时查询统计</h6>
+    </div>
+    <div class="card-body">
+        <div class="chart-container" style="height:300px;">
+            <canvas id="queryChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- 域名和记录统计 -->
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-icon cpu"><i class="fas fa-globe"></i></div>
+        <div class="stat-label">域名总数</div>
+        <div class="stat-value">{{ domain_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon memory"><i class="fas fa-database"></i></div>
+        <div class="stat-label">解析记录</div>
+        <div class="stat-value">{{ record_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon disk"><i class="fas fa-server"></i></div>
+        <div class="stat-label">节点设备</div>
+        <div class="stat-value">{{ server_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon query"><i class="fas fa-exchange-alt"></i></div>
+        <div class="stat-label">PTR记录</div>
+        <div class="stat-value">{{ ptr_count }}</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 24小时查询图表
+const ctx = document.getElementById('queryChart').getContext('2d');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ chart_labels|tojson }},
+        datasets: [{
+            label: '查询次数',
+            data: {{ chart_data|tojson }},
+            borderColor: '#1abc9c',
+            backgroundColor: 'rgba(26, 188, 156, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 3,
+            pointBackgroundColor: '#1abc9c'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(0,0,0,0.05)' }
+            },
+            x: {
+                grid: { display: false }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

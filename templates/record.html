@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}解析记录 - DNS管理系统{% endblock %}
+{% block page_title %}解析记录 - {{ domain_info.domain }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h6>解析记录列表</h6>
+        <div>
+            <a href="/domain" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> 返回</a>
+            <a href="javascript:void(0)" class="btn btn-primary btn-sm" onclick="showAddRecord()"><i class="fas fa-plus"></i> 添加记录</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>主机记录</th>
+                        <th>记录类型</th>
+                        <th>记录值</th>
+                        <th>TTL</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td>{{ r.id }}</td>
+                        <td>{{ r.host }}</td>
+                        <td><span class="badge badge-info">{{ r.qt }}</span></td>
+                        <td>{{ r.val }}</td>
+                        <td>{{ r.ttl }}</td>
+                        <td>
+                            {% if r.state == 0 %}
+                            <span class="badge badge-success">启用</span>
+                            {% else %}
+                            <span class="badge badge-danger">暂停</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn btn-warning btn-sm" onclick="editRecord({{ r.id }}, '{{ r.host }}', '{{ r.qt }}', '{{ r.val }}', {{ r.ttl }})"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteRecord({{ r.id }})"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not records %}
+                    <tr><td colspan="7" class="empty-state"><p>暂无解析记录</p></td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 添加/编辑记录模态框 -->
+<div class="modal-overlay" id="recordModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h5 id="recModalTitle">添加记录</h5>
+            <button class="close-btn" onclick="closeRecModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="recEditId">
+            <div class="form-group">
+                <label>主机记录</label>
+                <input type="text" class="form-control" id="recHost" placeholder="例如: www, @, *">
+            </div>
+            <div class="form-group">
+                <label>记录类型</label>
+                <select class="form-control" id="recType">
+                    <option value="A">A - IPv4地址</option>
+                    <option value="AAAA">AAAA - IPv6地址</option>
+                    <option value="CNAME">CNAME - 别名</option>
+                    <option value="MX">MX - 邮件</option>
+                    <option value="NS">NS - 名称服务器</option>
+                    <option value="TXT">TXT - 文本</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>记录值</label>
+                <input type="text" class="form-control" id="recVal" placeholder="例如: 192.168.1.1">
+            </div>
+            <div class="form-group">
+                <label>TTL (秒)</label>
+                <input type="number" class="form-control" id="recTTL" value="600" min="60" max="86400">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeRecModal()">取消</button>
+            <button class="btn btn-primary" onclick="saveRecord()">保存</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const did = {{ domain_info.id }};
+const domainName = '{{ domain_info.domain }}';
+
+function showAddRecord() {
+    document.getElementById('recModalTitle').textContent = '添加记录';
+    document.getElementById('recEditId').value = '';
+    document.getElementById('recHost').value = '';
+    document.getElementById('recType').value = 'A';
+    document.getElementById('recVal').value = '';
+    document.getElementById('recTTL').value = 600;
+    document.getElementById('recordModal').classList.add('show');
+}
+
+function editRecord(id, host, qt, val, ttl) {
+    document.getElementById('recModalTitle').textContent = '编辑记录';
+    document.getElementById('recEditId').value = id;
+    document.getElementById('recHost').value = host;
+    document.getElementById('recType').value = qt;
+    document.getElementById('recVal').value = val;
+    document.getElementById('recTTL').value = ttl;
+    document.getElementById('recordModal').classList.add('show');
+}
+
+function closeRecModal() {
+    document.getElementById('recordModal').classList.remove('show');
+}
+
+function saveRecord() {
+    const id = document.getElementById('recEditId').value;
+    const data = {
+        id: parseInt(id) || 0,
+        did: did,
+        domain: domainName,
+        host: document.getElementById('recHost').value.trim(),
+        qt: document.getElementById('recType').value,
+        val: document.getElementById('recVal').value.trim(),
+        ttl: parseInt(document.getElementById('recTTL').value) || 600
+    };
+    if (!data.host) { alert('请输入主机记录'); return; }
+    if (!data.val) { alert('请输入记录值'); return; }
+
+    const url = id ? '/api/record/edit' : '/api/record/add';
+    fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.code === 0) { location.reload(); }
+        else { alert(res.msg || '操作失败'); }
+    });
+}
+
+function deleteRecord(id) {
+    if (!confirm('确定要删除该记录吗？')) return;
+    fetch('/api/record/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id: id})
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.code === 0) { location.reload(); }
+        else { alert(res.msg || '删除失败'); }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}查询流量 - DNS管理系统{% endblock %}
+{% block page_title %}查询流量{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h6>查询流量统计</h6>
+    </div>
+    <div class="card-body">
+        <div class="time-range-btns">
+            <button class="btn-range {{ 'active' if time_range == 'realtime' }}" onclick="changeRange('realtime')">实时</button>
+            <button class="btn-range {{ 'active' if time_range == '3h' }}" onclick="changeRange('3h')">三小时</button>
+            <button class="btn-range {{ 'active' if time_range == 'today' }}" onclick="changeRange('today')">当天</button>
+            <button class="btn-range {{ 'active' if time_range == 'yesterday' }}" onclick="changeRange('yesterday')">昨天</button>
+            <button class="btn-range {{ 'active' if time_range == 'week' }}" onclick="changeRange('week')">一周</button>
+            <button class="btn-range {{ 'active' if time_range == 'month' }}" onclick="changeRange('month')">当月</button>
+        </div>
+        <div class="chart-container" style="height:350px;">
+            <canvas id="trafficChart"></canvas>
+        </div>
+        <div style="margin-top:20px;">
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-label">总查询数</div>
+                    <div class="stat-value">{{ total_queries }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">平均每分钟</div>
+                    <div class="stat-value">{{ avg_per_min }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">峰值</div>
+                    <div class="stat-value">{{ peak_value }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ctx = document.getElementById('trafficChart').getContext('2d');
+const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ chart_labels|tojson }},
+        datasets: [{
+            label: '查询量',
+            data: {{ chart_data|tojson }},
+            borderColor: '#1abc9c',
+            backgroundColor: 'rgba(26, 188, 156, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+            x: { grid: { display: false } }
+        }
+    }
+});
+
+function changeRange(range) {
+    location.href = '/query?range=' + range;
+}
+</script>
+{% endblock %}

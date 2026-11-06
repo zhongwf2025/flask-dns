@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}节点设备 - DNS管理系统{% endblock %}
+{% block page_title %}节点设备{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h6>节点列表</h6>
+        <a href="javascript:void(0)" class="btn btn-primary btn-sm" onclick="showAddServer()">
+            <i class="fas fa-plus"></i> 添加节点
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>IP地址</th>
+                        <th>名称</th>
+                        <th>域名数</th>
+                        <th>记录数</th>
+                        <th>QPS</th>
+                        <th>更新时间</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in servers %}
+                    <tr>
+                        <td>{{ s.id }}</td>
+                        <td>{{ s.ip }}</td>
+                        <td>{{ s.name }}</td>
+                        <td>{{ s.dom }}</td>
+                        <td>{{ s.rec }}</td>
+                        <td>{{ s.qps }}</td>
+                        <td>{{ s.utime }}</td>
+                        <td>
+                            {% if s.state == 0 %}
+                            <span class="badge badge-success">在线</span>
+                            {% else %}
+                            <span class="badge badge-danger">离线</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn btn-warning btn-sm" onclick="editServer({{ s.id }}, '{{ s.ip }}', '{{ s.name }}')"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteServer({{ s.id }})"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not servers %}
+                    <tr><td colspan="9" class="empty-state"><p>暂无节点数据</p></td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="serverModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h5 id="srvModalTitle">添加节点</h5>
+            <button class="close-btn" onclick="closeSrvModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="srvEditId">
+            <div class="form-group">
+                <label>IP地址</label>
+                <input type="text" class="form-control" id="srvIp" placeholder="例如: 192.168.1.100">
+            </div>
+            <div class="form-group">
+                <label>名称</label>
+                <input type="text" class="form-control" id="srvName" placeholder="节点名称">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeSrvModal()">取消</button>
+            <button class="btn btn-primary" onclick="saveServer()">保存</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showAddServer() {
+    document.getElementById('srvModalTitle').textContent = '添加节点';
+    document.getElementById('srvEditId').value = '';
+    document.getElementById('srvIp').value = '';
+    document.getElementById('srvName').value = '';
+    document.getElementById('serverModal').classList.add('show');
+}
+
+function editServer(id, ip, name) {
+    document.getElementById('srvModalTitle').textContent = '编辑节点';
+    document.getElementById('srvEditId').value = id;
+    document.getElementById('srvIp').value = ip;
+    document.getElementById('srvName').value = name;
+    document.getElementById('serverModal').classList.add('show');
+}
+
+function closeSrvModal() { document.getElementById('serverModal').classList.remove('show'); }
+
+function saveServer() {
+    const id = document.getElementById('srvEditId').value;
+    const data = {
+        id: parseInt(id) || 0,
+        ip: document.getElementById('srvIp').value.trim(),
+        name: document.getElementById('srvName').value.trim()
+    };
+    if (!data.ip || !data.name) { alert('IP和名称不能为空'); return; }
+
+    fetch(id ? '/api/server/edit' : '/api/server/add', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(res => { if (res.code === 0) location.reload(); else alert(res.msg || '操作失败'); });
+}
+
+function deleteServer(id) {
+    if (!confirm('确定删除?')) return;
+    fetch('/api/server/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id: id})
+    })
+    .then(r => r.json())
+    .then(res => { if (res.code === 0) location.reload(); else alert(res.msg || '删除失败'); });
+}
+</script>
+{% endblock %}

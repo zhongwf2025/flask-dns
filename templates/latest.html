@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}最新记录 - DNS管理系统{% endblock %}
+{% block page_title %}最新记录{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h6>最新查询记录 (最近100条)</h6>
+        <button class="btn btn-outline btn-sm" onclick="location.reload()"><i class="fas fa-redo"></i> 刷新</button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>域名</th>
+                        <th>类型</th>
+                        <th>客户IP</th>
+                        <th>递归</th>
+                        <th>时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.domain }}</td>
+                        <td><span class="badge badge-info">{{ log.qtype }}</span></td>
+                        <td>{{ log.client_ip }}</td>
+                        <td>{{ '是' if log.forward else '否' }}</td>
+                        <td>{{ log.rtime }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not logs %}
+                    <tr><td colspan="5" class="empty-state"><p>暂无查询记录</p></td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

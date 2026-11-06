@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DNS管理系统{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+{% block body %}
+<div class="app-wrapper">
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <h3>{{ admin_name }}</h3>
+            <small>DNS管理系统</small>
+        </div>
+        <ul class="sidebar-nav">
+            <li class="nav-item">
+                <a href="/" class="nav-link {% if active_page == 'index' %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt"></i><span>首页</span>
+                </a>
+            </li>
+            <li class="nav-section">解析管理</li>
+            <li class="nav-item">
+                <a href="/domain" class="nav-link {% if active_page == 'domain' %}active{% endif %}">
+                    <i class="fas fa-globe"></i><span>域名解析</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/ptr" class="nav-link {% if active_page == 'ptr' %}active{% endif %}">
+                    <i class="fas fa-exchange-alt"></i><span>反向解析</span>
+                </a>
+            </li>
+            <li class="nav-section">转发管理</li>
+            <li class="nav-item">
+                <a href="/forward" class="nav-link {% if active_page == 'forward' %}active{% endif %}">
+                    <i class="fas fa-share-square"></i><span>转发设置</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/cfw" class="nav-link {% if active_page == 'cfw' %}active{% endif %}">
+                    <i class="fas fa-random"></i><span>条件转发</span>
+                </a>
+            </li>
+            <li class="nav-section">节点管理</li>
+            <li class="nav-item">
+                <a href="/server" class="nav-link {% if active_page == 'server' %}active{% endif %}">
+                    <i class="fas fa-server"></i><span>节点设备</span>
+                </a>
+            </li>
+            <li class="nav-section">查询统计</li>
+            <li class="nav-item">
+                <a href="/query" class="nav-link {% if active_page == 'query' %}active{% endif %}">
+                    <i class="fas fa-chart-line"></i><span>查询流量</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/ranking" class="nav-link {% if active_page == 'ranking' %}active{% endif %}">
+                    <i class="fas fa-trophy"></i><span>排行统计</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/latest" class="nav-link {% if active_page == 'latest' %}active{% endif %}">
+                    <i class="fas fa-clock"></i><span>最新记录</span>
+                </a>
+            </li>
+            <li class="nav-section">系统设置</li>
+            <li class="nav-item">
+                <a href="/admin-settings" class="nav-link {% if active_page == 'admin_settings' %}active{% endif %}">
+                    <i class="fas fa-cog"></i><span>后台设置</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/system-settings" class="nav-link {% if active_page == 'system_settings' %}active{% endif %}">
+                    <i class="fas fa-tools"></i><span>系统设置</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/change-password" class="nav-link {% if active_page == 'change_password' %}active{% endif %}">
+                    <i class="fas fa-key"></i><span>修改密码</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="main-content">
+        <!-- 顶部栏 -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <h5>{% block page_title %}首页{% endblock %}</h5>
+            </div>
+            <div class="topbar-right">
+                <span class="user-info">
+                    <i class="fas fa-user-circle"></i> {{ session.get('username', 'admin') }}
+                </span>
+                <a href="/logout" class="btn-logout"><i class="fas fa-sign-out-alt"></i> 退出</a>
+            </div>
+        </div>
+
+        <!-- 内容区 -->
+        <div class="content-area">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<script src="/static/js/app.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

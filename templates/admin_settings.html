@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}后台设置 - DNS管理系统{% endblock %}
+{% block page_title %}后台设置{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><h6>后台基本设置</h6></div>
+    <div class="card-body">
+        <div class="form-group">
+            <label>后台名称</label>
+            <input type="text" class="form-control" id="adminName" value="{{ settings.get('admin_name', '') }}" style="max-width:400px;">
+        </div>
+        <div class="form-group">
+            <label>后台端口</label>
+            <input type="number" class="form-control" id="adminPort" value="{{ settings.get('admin_port', '8088') }}" style="max-width:200px;">
+        </div>
+        <div class="form-group">
+            <label>允许登录的IP地址</label>
+            <textarea class="form-control" id="loginIps" rows="3" style="max-width:400px;" placeholder="每行一个IP，留空表示不限制">{{ settings.get('login_ips', '').replace(',', '\n') }}</textarea>
+            <small style="color:var(--text-secondary);">留空表示不限制登录IP</small>
+        </div>
+        <div class="form-group">
+            <label>主服务器IP</label>
+            <input type="text" class="form-control" id="mainIp" value="{{ settings.get('main_ip', '') }}" style="max-width:400px;" placeholder="本机IP地址">
+        </div>
+        <button class="btn btn-primary" onclick="saveAdminSettings()"><i class="fas fa-save"></i> 保存设置</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function saveAdminSettings() {
+    const ips = document.getElementById('loginIps').value.trim().split('\n').map(s => s.trim()).filter(s => s);
+    fetch('/api/admin-settings/save', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            admin_name: document.getElementById('adminName').value.trim(),
+            admin_port: document.getElementById('adminPort').value.trim(),
+            login_ips: ips.join(','),
+            main_ip: document.getElementById('mainIp').value.trim()
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.code === 0) alert('保存成功');
+        else alert(data.msg || '保存失败');
+    });
+}
+</script>
+{% endblock %}

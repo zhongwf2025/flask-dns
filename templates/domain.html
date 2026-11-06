@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}域名解析 - DNS管理系统{% endblock %}
+{% block page_title %}域名解析{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h6>域名列表</h6>
+        <a href="javascript:void(0)" class="btn btn-primary btn-sm" onclick="showAddDomain()">
+            <i class="fas fa-plus"></i> 添加域名
+        </a>
+    </div>
+    <div class="card-body">
+        <!-- 搜索栏 -->
+        <div class="search-bar">
+            <input type="text" class="form-control" id="searchDomain" placeholder="搜索域名..." value="{{ keyword }}">
+            <button class="btn btn-primary" onclick="searchDomains()"><i class="fas fa-search"></i> 搜索</button>
+            <button class="btn btn-outline" onclick="location.href='/domain'"><i class="fas fa-redo"></i> 刷新</button>
+        </div>
+
+        <!-- 表格 -->
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>域名</th>
+                        <th>解析数</th>
+                        <th>备注</th>
+                        <th>添加时间</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in domains %}
+                    <tr>
+                        <td>{{ d.id }}</td>
+                        <td><a href="/record?did={{ d.id }}">{{ d.domain }}</a></td>
+                        <td>{{ d.count }}</td>
+                        <td>{{ d.note }}</td>
+                        <td>{{ d.rtime }}</td>
+                        <td>
+                            {% if d.state == 0 %}
+                            <span class="badge badge-success">正常</span>
+                            {% else %}
+                            <span class="badge badge-danger">暂停</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-btns">
+                                <a href="/record?did={{ d.id }}" class="btn btn-info btn-sm"><i class="fas fa-list"></i></a>
+                                <button class="btn btn-warning btn-sm" onclick="editDomain({{ d.id }}, '{{ d.domain }}', '{{ d.note }}')"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteDomain({{ d.id }})"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not domains %}
+                    <tr><td colspan="7" class="empty-state"><p>暂无域名数据</p></td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 分页 -->
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if page > 1 %}
+            <a href="/domain?page={{ page-1 }}&keyword={{ keyword }}" class="page-link">&laquo; 上一页</a>
+            {% endif %}
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == page %}
+                <span class="page-link" style="background:var(--primary-color);color:white;">{{ p }}</span>
+                {% else %}
+                <a href="/domain?page={{ p }}&keyword={{ keyword }}" class="page-link">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if page < total_pages %}
+            <a href="/domain?page={{ page+1 }}&keyword={{ keyword }}" class="page-link">下一页 &raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 添加/编辑域名模态框 -->
+<div class="modal-overlay" id="domainModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h5 id="modalTitle">添加域名</h5>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editId">
+            <div class="form-group">
+                <label>域名</label>
+                <input type="text" class="form-control" id="domainName" placeholder="例如: example.com">
+            </div>
+            <div class="form-group">
+                <label>备注</label>
+                <input type="text" class="form-control" id="domainNote" placeholder="可选备注">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal()">取消</button>
+            <button class="btn btn-primary" onclick="saveDomain()">保存</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showAddDomain() {
+    document.getElementById('modalTitle').textContent = '添加域名';
+    document.getElementById('editId').value = '';
+    document.getElementById('domainName').value = '';
+    document.getElementById('domainNote').value = '';
+    document.getElementById('domainModal').classList.add('show');
+}
+
+function editDomain(id, domain, note) {
+    document.getElementById('modalTitle').textContent = '编辑域名';
+    document.getElementById('editId').value = id;
+    document.getElementById('domainName').value = domain;
+    document.getElementById('domainNote').value = note;
+    document.getElementById('domainModal').classList.add('show');
+}
+
+function closeModal() {
+    document.getElementById('domainModal').classList.remove('show');
+}
+
+function saveDomain() {
+    const id = document.getElementById('editId').value;
+    const domain = document.getElementById('domainName').value.trim();
+    const note = document.getElementById('domainNote').value.trim();
+    if (!domain) { alert('请输入域名'); return; }
+
+    const url = id ? '/api/domain/edit' : '/api/domain/add';
+    fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id: parseInt(id) || 0, domain: domain, note: note})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.code === 0) { location.reload(); }
+        else { alert(data.msg || '操作失败'); }
+    });
+}
+
+function deleteDomain(id) {
+    if (!confirm('确定要删除该域名吗？')) return;
+    fetch('/api/domain/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id: id})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.code === 0) { location.reload(); }
+        else { alert(data.msg || '删除失败'); }
+    });
+}
+
+function searchDomains() {
+    const kw = document.getElementById('searchDomain').value.trim();
+    location.href = '/domain?keyword=' + encodeURIComponent(kw);
+}
+</script>
+{% endblock %}

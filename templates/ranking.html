@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}排行统计 - DNS管理系统{% endblock %}
+{% block page_title %}排行统计{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h6>域名查询排行 (前30)</h6>
+        <div class="time-range-btns" style="margin:0;">
+            <button class="btn-range {{ 'active' if time_range == 'today' }}" onclick="changeRange('today')">当天</button>
+            <button class="btn-range {{ 'active' if time_range == 'week' }}" onclick="changeRange('week')">一周</button>
+            <button class="btn-range {{ 'active' if time_range == 'month' }}" onclick="changeRange('month')">当月</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>排名</th>
+                        <th>域名</th>
+                        <th>查询次数</th>
+                        <th>占比</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rankings %}
+                    <tr>
+                        <td>
+                            {% if loop.index <= 3 %}
+                            <span class="badge badge-warning" style="font-weight:bold;">{{ loop.index }}</span>
+                            {% else %}
+                            {{ loop.index }}
+                            {% endif %}
+                        </td>
+                        <td>{{ r.domain }}</td>
+                        <td><strong>{{ r.qc }}</strong></td>
+                        <td>
+                            <div style="background:#f0f0f0;border-radius:10px;height:8px;width:150px;display:inline-block;vertical-align:middle;">
+                                <div style="background:var(--primary-color);height:8px;border-radius:10px;width:{{ r.percent }}%;"></div>
+                            </div>
+                            <span style="margin-left:8px;font-size:12px;color:var(--text-secondary);">{{ r.percent }}%</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not rankings %}
+                    <tr><td colspan="4" class="empty-state"><p>暂无查询数据</p></td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function changeRange(range) {
+    location.href = '/ranking?range=' + range;
+}
+</script>
+{% endblock %}
