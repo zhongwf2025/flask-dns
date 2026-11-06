@@ -102,3 +102,43 @@ A: 在服务器上执行: yum install -y docker-ce docker-ce-cli containerd.io
 
 Q: 权限不足?
 A: 确保使用root用户或具有sudo权限的用户
+
+
+项目结构
+D:\py\dns\
+├── main.py              # 主入口
+├── app.py               # Flask Web应用 (1120行，含所有路由和API)
+├── dns_server.py        # DNS服务器核心 (UDP 53端口)
+├── config.py            # 配置文件
+├── init_db.py           # 数据库初始化脚本 (20+张表)
+├── requirements.txt     # Python依赖
+├── static/
+│   ├── css/style.css    # 青绿色主题样式
+│   └── js/app.js        # 前端通用脚本
+└── templates/           # 14个HTML模板
+    ├── base.html, login.html, index.html
+    ├── domain.html, record.html, ptr.html
+    ├── forward.html, cfw.html, server.html
+    ├── query.html, ranking.html, latest.html
+    ├── admin_settings.html, system_settings.html
+    └── change_password.html
+
+功能模块
+模块	功能
+解析管理	域名解析（增删改查A/AAAA/CNAME/MX/NS/TXT记录）、反向解析（PTR记录）
+转发管理	递归转发开关/缓存时间/上级DNS设置、条件转发规则管理
+节点管理	DNS节点设备的增删改查
+查询统计	24小时查询流量图表、域名查询排行前30、最新100条查询记录
+系统设置	后台名称/端口/登录IP限制、Cookie时间/DNS端口、修改密码
+
+启动方式
+# 1. 安装依赖
+pip install flask pymysql psutil
+
+# 2. 配置数据库（编辑 config.py 中的 MySQL 连接信息）
+# 3. 初始化数据库（首次运行自动创建）
+python init_db.py
+
+# 4. 启动服务
+python main.py
+启动后访问 http://127.0.0.1:8088，默认账号 admin / admin。
