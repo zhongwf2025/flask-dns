@@ -89,7 +89,7 @@ MySQL数据存储在 `mysql_data` 卷中，容器删除后数据不会丢失。
 
 如需备份数据：
 ```bash
-docker exec dns-mysql mysqldump -u root -pDw.2016% dns > backup.sql
+docker exec dns-mysql mysqldump -u root -p root123456 dns > backup.sql
 ```
 
 ## 故障排查
